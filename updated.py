@@ -1134,6 +1134,81 @@ def choose_mode(screen, font_big_local, font_mid_local, font_small_local):
         ],
     ]
 
+    manual_pages: List[List[str]] = [
+        [   # Page 1 — Overview & Goals
+            "HOW TO PLAY — Quantum Territory Wars",
+            "",
+            "VICTORY CONDITIONS",
+            "Win by achieving any ONE of the following:",
+            "• Territorial Victory — Control 18 hexes",
+            "• Quantum Victory — Control all 5 Quantum Nodes",
+            "• Economic Victory — Reach 600 resources",
+            "",
+            "GAME SETUP",
+            "• Randomly generated hex map with 5 Quantum Nodes",
+            "• Three factions: Expansion Empire (Blue), Tech Collective (Red), Adaptive Alliance (Green)",
+            "• Starting positions and terrain randomized each match",
+            "",
+            "GAME MODES",
+            "Select your mode from the home screen:",
+            "• Press 1 — Human vs 2 AI opponents",
+            "• Press 2 — 2 Humans vs 1 AI opponent",
+            "• Press 3 — 3 Human players",
+        ],
+        [   # Page 2 — Terrain & Game Systems
+            "TERRAIN TYPES",
+            "Movement costs vary by terrain (A* pathfinding):",
+            "• Plains — Easy movement, low cost",
+            "• Forest — Slower movement, moderate cost",
+            "• Mountains — Very slow movement, high cost",
+            "• Desert — Moderate movement cost",
+            "• Water — Difficult to cross, very high cost",
+            "• Quantum Node — Strategic objective (purple hexes)",
+            "",
+            "AI BEHAVIOR",
+            "Opponents use advanced decision-making:",
+            "• Alpha-beta minimax algorithm evaluates all possible actions",
+            "• Fuzzy logic evaluation balances multiple priorities",
+            "• Considers resources, territories, Quantum Nodes, and units",
+            "• Receives bonus scoring for near-victory states",
+            "",
+            "ECONOMY SYSTEM",
+            "• Base income: +10 resources per round",
+            "• Territory bonus: +2 resources per owned hex",
+            "• Income distributed after each full round completes",
+        ],
+        [   # Page 3 — Actions & Controls
+            "PLAYER ACTIONS",
+            "Available actions each turn:",
+            "• EXPAND [E] — Cost: 30 resources",
+            "  Claim a neutral hex adjacent to your territory",
+            "• BUILD [B] — Cost: 40 resources",
+            "  Train a Warrior unit on one of your owned hexes",
+            "• ECONOMY [C] — Cost: 25 resources",
+            "  Execute quick trade for +40 resources",
+            "• END TURN [Space] — Pass to next player",
+            "",
+            "STRATEGY TIPS",
+            "• Expand early to increase your income generation",
+            "• Guard Quantum Nodes — they can swing the game",
+            "• Balance economic growth with military buildup",
+            "• Control territory borders to limit enemy expansion",
+            "",
+            "KEYBOARD CONTROLS",
+            "• E / B / C / Space — Quick action hotkeys",
+            "• Esc (during match) — Return to home screen",
+            "• R (game over) — Restart new game",
+            "• Left / Right Arrow — Navigate manual pages",
+            "• Esc (in manual) — Close manual",
+            "",
+            "INTERFACE LAYOUT",
+            "• Top Bar — Turn information and action hints",
+            "• Right Panel — Player stats and turn log",
+            "• Bottom Bar — Action buttons with hotkeys",
+            "• Bottom-Left — Minimap overview",
+        ],
+    ]
+
     def draw_manual_overlay(page_idx: int):
         overlay = pygame.Surface((WIN_W, WIN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
@@ -1175,16 +1250,20 @@ def choose_mode(screen, font_big_local, font_mid_local, font_small_local):
 
         for ln in manual_pages[page_idx]:
             if not ln:
-                y += 6
+                y += 8
                 continue
-            # headings (emoji or all caps words at line start)
-            if ln.startswith(("🎯","🕹️","🌍","🧠","💼","💰","🖥️","🧩","⌨️","📖")) or ln.isupper():
+            # Section headers (all caps)
+            if ln.isupper() and not ln.startswith("•"):
                 y = blit_wrapped(ln, FOCUS, y, font_mid_local)
-            elif ln.startswith(("•"," -","• ")):
+                y += 4  # Extra spacing after headers
+            # Bullet points
+            elif ln.startswith("•"):
                 y = blit_wrapped(ln, WHITE, y, font_small_local)
+            # Regular text
             else:
-                y = blit_wrapped(ln, WHITE, y, font_small_local)
-            if y > box.bottom - 80:
+                y = blit_wrapped(ln, (200, 200, 200), y, font_small_local)
+            
+            if y > box.bottom - 90:
                 break
 
         # Footer controls
@@ -1446,10 +1525,19 @@ def play_match(screen, initial_mode) -> bool:
 
     def draw_map(dt):
         nonlocal sel_pulse_t
+        
+        # Get mouse position for hover detection
+        mouse_pos = pygame.mouse.get_pos()
+        hovered_hex = None
+        
+        # Determine which hex is being hovered
+        if mouse_pos[1] < WIN_H - FOOTER_H:  # Only if mouse is above footer
+            hovered_hex = hex_at(mouse_pos)
+        
         for pos,hx in game.board.hexes.items():
             c=hex_centers[pos]; pts=hex_corners((c[0]+2,c[1]+2))
             pygame.draw.polygon(screen,(0,0,0,22),pts)
-
+        
         for pos,hx in game.board.hexes.items():
             c=hex_centers[pos]; pts=hex_corners(c)
             fill=TERRAIN_FILL[hx.terrain.value]
@@ -1457,7 +1545,7 @@ def play_match(screen, initial_mode) -> bool:
             rim=OWNER_COLORS[hx.owner.value]
             pygame.draw.polygon(screen, rim, pts, 3)
             pygame.draw.polygon(screen, (255,255,255,12), pts, 1)
-
+            
             if hx.terrain==TerrainType.QUANTUM_NODE:
                 glow_r = 12
                 s=pygame.Surface((glow_r*4, glow_r*4), pygame.SRCALPHA)
@@ -1465,7 +1553,7 @@ def play_match(screen, initial_mode) -> bool:
                 screen.blit(s,(c[0]-2*glow_r, c[1]-2*glow_r))
                 pygame.draw.circle(screen,(250,236,255),c,6)
                 pygame.draw.circle(screen,(120,85,180),c,6,2)
-
+        
         for p in game.players:
             uc=OWNER_COLORS[p.faction.value]
             hex_groups: Dict[Tuple[int,int], List[Unit]]={}
@@ -1485,7 +1573,7 @@ def play_match(screen, initial_mode) -> bool:
                     pygame.draw.rect(screen, (28,30,38), badge, border_radius=6)
                     pygame.draw.rect(screen, (90,96,112), badge, 1, border_radius=6)
                     screen.blit(font.render(str(len(units)), True, WHITE), (badge.x+6, badge.y+1))
-
+        
         if selected and selected in hex_centers:
             sel_pulse_t = (sel_pulse_t + dt*0.004) % 1.0
             c = hex_centers[selected]
@@ -1494,7 +1582,7 @@ def play_match(screen, initial_mode) -> bool:
             s=pygame.Surface((radius*2+4, radius*2+4), pygame.SRCALPHA)
             pygame.draw.circle(s,(255,240,150,90),(radius+2,radius+2),radius,2)
             screen.blit(s,(c[0]-radius-2, c[1]-radius-2))
-
+        
         if game.last_action_feedback:
             (cx,cy),ttl=game.last_action_feedback
             r=int(14 + (1-ttl/0.5)*10)
@@ -1504,7 +1592,7 @@ def play_match(screen, initial_mode) -> bool:
             ttl-=dt/1000.0
             if ttl<=0: game.last_action_feedback=None
             else: game.last_action_feedback=((cx,cy),ttl)
-
+        
         if targeting_expand:
             surf = pygame.Surface((WIN_W, WIN_H), pygame.SRCALPHA)
             for pos in expand_candidates:
@@ -1520,6 +1608,10 @@ def play_match(screen, initial_mode) -> bool:
                 pygame.draw.polygon(surf, (120,200,255,90), hex_corners(c), 0)
                 pygame.draw.polygon(surf, (255,255,255,180), hex_corners(c), 2)
             screen.blit(surf, (0,0))
+        
+        # ===== ADD THIS: Draw tooltip for hovered hex =====
+        if hovered_hex and hovered_hex in game.board.hexes:
+            draw_hex_tooltip(screen, game, hovered_hex, mouse_pos[0], mouse_pos[1])
 
     def draw_right():
         draw_shadow(screen, right_rect, spread=10, alpha=80)
