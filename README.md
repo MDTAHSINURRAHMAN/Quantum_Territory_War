@@ -67,10 +67,13 @@ Notes
 
 ## 📸 Showcase / Screenshots
 
-```markdown
 ![Title Screen](screenshots/title_screen.png)
+
+_Title screen — mode selection, Manual overlay and quick mode buttons._
+
 ![Gameplay Map](screenshots/gameplay_map.png)
-```
+
+_In-game map view — hex grid with terrain, units, minimap and right-panel player cards._
 
 ## 💡 Design Decisions & Architecture Notes
 
