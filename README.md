@@ -100,5 +100,3 @@ _In-game map view — hex grid with terrain, units, minimap and right-panel play
 ## 📬 Contact & Attribution
 
 Built with by MDTAHSINURRAHMAN and Anirban Ghosh Argha.
-
-If you'd like help splitting `updated.py` into modules, adding unit tests, or preparing an installer / executable (PyInstaller), open an issue or ask in this repo.
